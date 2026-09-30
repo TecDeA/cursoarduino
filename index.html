@@ -6,7 +6,14 @@
 <meta name="color-scheme" content="dark">
 <meta name="description" content="Videoteca interactiva del curso «AVFP 183 · Tech Project: Arduino en el aula»: navega por los vídeos, etiquétalos y filtra la colección.">
 <title>Videoteca · Arduino en el aula</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23fb4d69'/%3E%3Cpath d='M26 20v24a3 3 0 0 0 4.5 2.6l19-12a3 3 0 0 0 0-5.2l-19-12A3 3 0 0 0 26 20Z' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#00979d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Videoteca Arduino">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1180,6 +1187,15 @@ $('#footCount').textContent=VIDEOS.length;
 $('#footDur').textContent=fmtDur(TOTAL_SEC);
 renderAll();updateStats();maybeTip();
 })();
+</script>
+<script>
+/* Registro del service worker (solo bajo http/https, con ámbito ./ —
+   no afecta a otras aplicaciones alojadas en el mismo dominio). */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+ addEventListener('load',()=>{
+  navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});
+ });
+}
 </script>
 </body>
 </html>
