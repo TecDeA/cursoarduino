@@ -2,7 +2,7 @@
    Ámbito: la carpeta de esta app (scope './'). No interfiere con otras
    aplicaciones del mismo dominio porque solo controla las páginas bajo
    este directorio. */
-const CACHE = 'videoteca-arduino-v1';
+const CACHE = 'videoteca-arduino-v1.3';
 // Versión que muestra el chip dinámico de index.html. Se deriva del nombre de
 // la caché a propósito: al publicar una release solo hay que subir CACHE
 // (v1 → v2…), y el chip, el precacheado y la limpieza de cachés antiguas
