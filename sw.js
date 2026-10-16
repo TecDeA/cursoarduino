@@ -3,6 +3,11 @@
    aplicaciones del mismo dominio porque solo controla las páginas bajo
    este directorio. */
 const CACHE = 'videoteca-arduino-v1';
+// Versión que muestra el chip dinámico de index.html. Se deriva del nombre de
+// la caché a propósito: al publicar una release solo hay que subir CACHE
+// (v1 → v2…), y el chip, el precacheado y la limpieza de cachés antiguas
+// quedan sincronizados con un único cambio.
+const VERSION = CACHE.split('-').pop();
 const ASSETS = [
   './',
   './index.html',
@@ -26,6 +31,14 @@ self.addEventListener('activate', (event) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k.startsWith('videoteca-arduino-')).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+/* El chip de versión de index.html pregunta aquí (mensaje GET_VERSION) y
+   recibe la versión y la caché vigentes del service worker activo. */
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.source.postMessage({ type: 'VERSION', version: VERSION, cache: CACHE });
+  }
 });
 
 self.addEventListener('fetch', (event) => {
