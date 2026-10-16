@@ -86,6 +86,18 @@ kbd{
 .brand-txt{min-width:0}
 .brand-txt h1{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
 .brand-txt .sub{font-size:11.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+/* Chip de versión junto al título: se obtiene en runtime desde sw.js */
+.ver-chip{
+  display:inline-flex;align-items:center;gap:5px;margin-left:2px;vertical-align:middle;
+  padding:3.5px 9px;border-radius:999px;white-space:nowrap;
+  font-family:var(--font-body);font-size:10px;font-weight:600;line-height:1;letter-spacing:.06em;
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);
+  animation:verIn .35s cubic-bezier(.2,.9,.3,1.05) both;
+}
+.ver-chip .vdot{width:6px;height:6px;border-radius:50%;background:var(--text-3);flex-shrink:0}
+.ver-chip.loaded{color:#7ce8bb;border-color:rgba(52,211,153,.32);background:rgba(52,211,153,.09)}
+.ver-chip.loaded .vdot{background:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.75)}
+@keyframes verIn{from{opacity:0;transform:translateY(-3px)}}
 .search{position:relative;flex:1;min-width:min(420px,100%);max-width:540px}
 .search svg.mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none}
 .search input{
@@ -429,7 +441,7 @@ footer{margin-top:auto;border-top:1px solid var(--border);background:rgba(255,25
           <svg viewBox="0 0 24 24" fill="none"><path d="M9 6.8v10.4c0 .9 1 1.5 1.8 1L19 12.9c.7-.5.7-1.5 0-2L10.8 5.8c-.8-.5-1.8.1-1.8 1Z" fill="#fff"/></svg>
         </span>
         <div class="brand-txt">
-          <h1>Videoteca</h1>
+          <h1>Videoteca <span class="ver-chip hidden" id="verChip" title="Versión de la aplicación"><span class="vdot" aria-hidden="true"></span><span id="verTxt">…</span></span></h1>
           <p class="sub">AVFP 183 · Tech Project: Arduino en el aula</p>
         </div>
       </div>
@@ -1196,6 +1208,67 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});
  });
 }
+
+/* ================= Chip de versión (leído de sw.js) =================
+   Muestra junto a «Videoteca» la versión declarada en el service worker.
+   1) Vía preferente: pregunta al SW activo por mensajería (GET_VERSION).
+   2) Respaldo: descarga sw.js y extrae la constante CACHE.
+   Si el SW activo cambia (p. ej., tras actualizar la caché), el chip se
+   refresca solo con la nueva versión. */
+(function(){
+ 'use strict';
+ var chip=document.getElementById('verChip'),txt=document.getElementById('verTxt');
+ if(!chip||!txt)return;
+ var current='';
+
+ function extract(name){
+  var m=/-(v[\w.]+)$/i.exec(String(name||''));
+  return m?m[1]:String(name||'');
+ }
+ function show(version,cacheName){
+  version=String(version||'');
+  if(!version||version===current)return;
+  current=version;
+  txt.textContent=version;
+  chip.classList.add('loaded');
+  chip.classList.remove('hidden');
+  chip.title=cacheName
+   ?('Versión de la app · caché «'+cacheName+'» definida en sw.js')
+   :'Versión de la app (definida en sw.js)';
+ }
+ function viaFetch(){
+  fetch('sw.js',{cache:'no-store'})
+   .then(function(r){return r.ok?r.text():'';})
+   .then(function(t){
+    if(current||!t)return;
+    var m=/CACHE\s*=\s*['"]([^'"]+)['"]/.exec(t);
+    if(m)show(extract(m[1]),m[1]);
+   })
+   .catch(function(){});
+ }
+ function ask(sw){
+  if(!sw)return;
+  try{sw.postMessage({type:'GET_VERSION'});}catch(e){}
+ }
+
+ if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',function(e){
+   var d=e.data||{};
+   if(d.type==='VERSION')show(d.version||extract(d.cache),d.cache);
+  });
+  if(navigator.serviceWorker.controller)ask(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+   current=''; /* el SW activo cambió: permitir refrescar el valor */
+   ask(navigator.serviceWorker.controller);
+  });
+  navigator.serviceWorker.ready.then(function(reg){ask(reg.active);}).catch(function(){});
+  /* Si en 2 s no ha respondido el SW (sin registrar, contexto no seguro…),
+     se lee la versión directamente del fichero sw.js. */
+  setTimeout(function(){if(!current)viaFetch();},2000);
+ }else{
+  viaFetch();
+ }
+})();
 </script>
 </body>
 </html>
